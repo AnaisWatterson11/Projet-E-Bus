@@ -1,0 +1,379 @@
+#include<stdio.h>
+#include<string.h>
+#include<stdlib.h>
+#include<ctype.h>
+
+
+struct Voyageur{
+int id;
+char Nom[20];
+char Prenom[20];
+struct Voyageur*suiv;
+};
+struct Bus{
+int num;
+char destination[20];
+int capacitemaximale;
+};
+struct Reservation{
+int numreservation;
+int idv;
+int numbus;
+struct Reservation* suiv;
+};
+struct ListeVoyageurs{
+struct Voyageur*teteliste;
+int nombreVoyageurs;
+};
+//creation  voyageur//
+struct Voyageur*creerVoyageur(int id, const char *Nom, const char *Prenom) {
+struct Voyageur *nouveauVoyageur = (struct Voyageur *)malloc(sizeof(struct Voyageur));
+if (nouveauVoyageur == NULL) 
+    exit(EXIT_FAILURE);
+(*nouveauVoyageur).id = id;
+strncpy(nouveauVoyageur->Nom,Nom,20);
+strncpy(nouveauVoyageur->Prenom,Prenom,20);
+nouveauVoyageur->suiv = NULL;
+return nouveauVoyageur;
+}
+
+// Ajout des voyageurs initialement déjà stockés sur le fichier detailsVoyageurs.txt//
+void ajouterVoyageursStockés(struct ListeVoyageurs*listevoyageurs){
+int id;
+char Nom[20];
+char Prenom[20];
+FILE *fichier = fopen("detailsVoyageur.txt", "r");
+if (fichier == NULL) {
+    exit(EXIT_FAILURE);
+}
+while(1){
+if (fscanf(fichier, "%d,%19s[^,],%19s\n", &id, Nom, Prenom) != 3) 
+    {printf("/fin du fichier ou erreur de lecture/\n");
+    break;}
+struct Voyageur *nouveauVoyageur = creerVoyageur(id, Nom, Prenom);
+(*nouveauVoyageur).suiv= (*listevoyageurs).teteliste;
+(*listevoyageurs).teteliste= nouveauVoyageur;
+(*listevoyageurs).nombreVoyageurs++;
+}
+fclose(fichier);
+}
+
+
+// creation compte voyageur et ajout des détails du voyageur ajouté dans le fichier detailsVoyageurs.txt //
+void creercomptevoyageur(struct ListeVoyageurs*listevoyageurs){
+int id;
+char Nom[20];
+char Prenom[20];
+id = (*listevoyageurs).nombreVoyageurs+1;
+printf("Saisir le nom du voyageur : ");
+scanf("%s", Nom);
+printf("Saisir le prénom du voyageur : ");
+scanf("%s", Prenom);
+struct Voyageur *nouveauVoyageur = creerVoyageur(id, Nom, Prenom);
+(*nouveauVoyageur).suiv = (*listevoyageurs).teteliste;
+(*listevoyageurs).teteliste = nouveauVoyageur;
+(*listevoyageurs).nombreVoyageurs++;
+FILE *fichier = fopen("detailsVoyageur.txt", "a");
+if (fichier == NULL) {
+    exit(EXIT_FAILURE);
+}
+fprintf(fichier, "%d,%s,%s\n", (*nouveauVoyageur).id, (*nouveauVoyageur).Nom, (*nouveauVoyageur).Prenom);
+fclose(fichier);
+printf("Compte voyageur créé avec succès.\n");
+}
+
+
+// affichage des détails des voyageurs stockés sur le fichier detailsVoyageurs.txt//
+void afficherdetailsvoyageurs(struct ListeVoyageurs*listevoyageurs){
+printf("Voici la liste complete des voyageurs:  \n");
+struct Voyageur *courant = (*listevoyageurs).teteliste;
+while (courant != NULL) {
+    printf("Voyageur %d - Nom : %s, Prénom : %s\n", (*courant).id, (*courant).Nom, (*courant).Prenom);
+    courant=(*courant).suiv;
+    }
+}
+
+
+// libération de la mémoire allouée à la liste des voyageurs //
+void libererListeVoyageurs(struct ListeVoyageurs *listevoyageurs) {
+struct Voyageur *courant = (*listevoyageurs).teteliste;
+while (courant != NULL) {
+    struct Voyageur *temp = courant;
+    courant=(*courant).suiv;
+    free(temp);
+    }
+(*listevoyageurs).teteliste = NULL;
+(*listevoyageurs).nombreVoyageurs = 0;
+}
+
+//affichage des détails des bus stockés dans le fichier detailsBus.txt//
+void afficherbus(){
+int num;
+char destination[20];
+int capacitemaximale;
+FILE *fichier = fopen("detailsBus.txt", "r");
+if (fichier == NULL) 
+    exit(EXIT_FAILURE);
+printf("Voici la liste des bus: \n");
+while (1){
+if (fscanf(fichier, "%d,%19s[^,],%d\n", &num, destination, &capacitemaximale) != 3) 
+    {printf("/fin du fichier ou erreur de lecture/\n");
+    break;}
+printf("Bus %d - Destination : %s, Capacité Maximale : %d\n", num, destination, capacitemaximale);
+}
+fclose(fichier);
+}
+
+struct ListeReservations{
+struct Reservation*teteliste;
+int nombreReservations;
+};
+
+//creation d'une reservation//
+struct Reservation *creerReservation(int numreservation, int idv, int numbus) {
+struct Reservation *nouvelleReservation = (struct Reservation *)malloc(sizeof(struct Reservation));
+if (nouvelleReservation == NULL) 
+    exit(EXIT_FAILURE);
+(*nouvelleReservation).numreservation = numreservation;
+(*nouvelleReservation).idv = idv;
+(*nouvelleReservation).numbus = numbus;
+(*nouvelleReservation).suiv = NULL;
+return nouvelleReservation;
+}
+
+// Ajout des réservations déjà stockées initialement dans le fichier detailsReservation.txt //
+void ajouterReservationsstockées(struct ListeReservations *listereservations) {
+int numreservation;
+int idv;
+int numbus;
+FILE *fichier = fopen("detailsReservation.txt", "r");
+if (fichier == NULL) 
+    exit(EXIT_FAILURE);
+while (1){
+    if (fscanf(fichier, "%d,%d,%d\n", &numreservation, &idv, &numbus) != 3) 
+        {printf("/fin du fichier ou erreur de lecture/\n");
+        break;}
+struct Reservation *nouvelleReservation = creerReservation(numreservation,idv,numbus);
+(*nouvelleReservation).suiv = (*listereservations).teteliste;
+(*listereservations).teteliste = nouvelleReservation;
+(*listereservations).nombreReservations++;
+}
+fclose(fichier);
+}
+
+// Verification de la validité d'un numbus fourni par l'utilisateur //
+int estValide(int numbus) {
+    if ((numbus>=1) && (numbus<=20))
+        return 1; 
+    else 
+        return 0; 
+    }
+
+
+// Ajout d'une reservation crée à la liste des réservations et stocker ses détails dans detailsReservation.txt //
+void Ajoutnouvellereservation(struct ListeReservations *listereservations){
+int numreservation;
+int idv;
+int numbus;
+numreservation=(*listereservations).nombreReservations + 1;
+printf("Saisir l'ID du voyageur pour la réservation : ");
+scanf("%d", &idv);
+printf("Saisir l'ID du bus pour la réservation : ");
+scanf("%d", &numbus);
+if (estValide(numbus)==1)
+    {
+    struct Reservation *nouvelleReservation = creerReservation(numreservation, idv, numbus);
+    (*nouvelleReservation).suiv=(*listereservations).teteliste;
+    (*listereservations).teteliste = nouvelleReservation;
+    (*listereservations).nombreReservations++;
+    FILE *fichier = fopen("detailsReservation.txt", "a");
+    if (fichier == NULL) 
+        exit(EXIT_FAILURE);
+    fprintf(fichier, "%d,%d,%d\n", (*nouvelleReservation).numreservation, (*nouvelleReservation).idv, (*nouvelleReservation).numbus);
+    fclose(fichier);
+    printf("Réservation effectuée avec succès.\n");}
+else
+    printf("le numero de bus fourni est invalide!\n");
+}
+
+// Affichage des détails d'une réservation stockée dans detailsReservation.txt //
+void afficherdetailsreservation(int numreservation) {
+int id;
+int idv;
+int numbus;
+int reservationTrouvee = 0;
+FILE *fichier = fopen("detailsReservation.txt", "r");
+if (fichier == NULL) 
+    exit(EXIT_FAILURE);
+;
+while (fscanf(fichier, "%d,%d,%d\n", &id, &idv, &numbus) == 3){
+if (id == numreservation)
+{
+reservationTrouvee = 1;
+printf("Détails de la réservation :\n");
+printf("ID Réservation : %d\n", id);
+printf("ID Voyageur : %d\n", idv);
+printf("ID Bus : %d\n", numbus);
+break;
+}
+}
+fclose(fichier);
+if (!reservationTrouvee) 
+        printf("Aucune réservation trouvée avec l'ID %d.\n", numreservation);
+}
+
+
+// modification des details d'une reservation //
+void modifierDetailsReservation(int numeroreservation) {
+int id;
+int idv;
+int numbus;
+int reservationTrouvee = 0;
+long longueurLigne;
+FILE *fichier = fopen("detailsReservation.txt", "r+");
+if (fichier == NULL) 
+        exit(EXIT_FAILURE);
+while (fscanf(fichier, "%d,%d,%d\n", &id, &idv, &numbus)==3){
+if (id==numeroreservation)
+    {
+    reservationTrouvee = 1;
+    afficherdetailsreservation(numeroreservation);
+    printf("\nSaisir les nouveaux détails de la réservation :\n");
+    printf("Nouvel ID Voyageur : ");
+    scanf("%d", &idv);
+    printf("Nouvel ID Bus : ");
+    scanf("%d", &numbus);
+    longueurLigne = ftell(fichier);
+    fseek(fichier, -1*(longueurLigne-(long)strlen("\n")), SEEK_CUR);
+    fprintf(fichier, "%d,%d,%d\n",id,idv, numbus);
+    printf("Détails de la réservation modifiés avec succès.\n");
+    break;
+    }
+}
+fclose(fichier);
+if (!reservationTrouvee) 
+    printf("Aucune réservation trouvée avec l'ID %d.\n", numeroreservation);  
+}
+
+// affichage de toutes les réservations effecutées par un voyageur //
+void afficherReservationsVoyageur(int idv){
+FILE *fichier = fopen("detailsReservation.txt", "r");
+if (fichier == NULL) 
+    exit(EXIT_FAILURE);
+int numreservation;
+int numbus;
+int idVoyageurLu;
+printf("Réservations pour le voyageur avec l'ID %d :\n", idv);
+printf("------------------------------------------------\n");
+while (fscanf(fichier, "%d,%d,%d\n", &numreservation, &idVoyageurLu, &numbus) == 3){
+if (idVoyageurLu == idv) 
+    printf("ID Réservation : %d, ID Voyageur : %d, ID Bus : %d\n",numreservation, idVoyageurLu, numbus);
+}
+fclose(fichier);
+}
+
+
+//liberer la memoire allouée à la liste des reservations//
+void libererListeReservations(struct ListeReservations *listereservations) {
+struct Reservation *courant = (*listereservations).teteliste;
+while (courant != NULL) {
+    struct Reservation *temp = courant;
+    courant=(*courant).suiv;
+    free(temp);
+    }
+(*listereservations).teteliste = NULL;
+(*listereservations).nombreReservations= 0;
+}
+
+
+int main()
+{
+struct ListeVoyageurs listevoyageurs;
+struct ListeReservations listereservations;
+int choix;
+int idreservation;
+int idvoyageur; 
+do
+{
+printf("\n Menu application E-Bus\n");
+printf("1.  Creer un nouveau compte Voyageur\n");
+printf("2.  Afficher la liste des voyageurs\n  ");
+printf("3.  Afficher les details des bus\n");
+printf("4.  Creer une nouvelle reservation\n");
+printf("5.  Afficher les details relatifs à une reservation\n");
+printf("6.  Afficher les reservations effectuees par un voyageur\n");
+printf("7.  Modifier une reservation");
+printf("8.  Quitter le menu\n");
+printf("donnez votre choix:     ");
+scanf("%d",&choix);
+switch (choix)
+{
+case 1:
+{    
+    listevoyageurs.teteliste=NULL;
+    listevoyageurs.nombreVoyageurs=0;
+    ajouterVoyageursStockés(&listevoyageurs);
+    creercomptevoyageur(&listevoyageurs);
+    break;
+}
+case 2:
+{
+    afficherdetailsvoyageurs(&listevoyageurs);
+    break;
+}
+case 3:
+{
+    afficherbus();
+    break;
+}
+case 4:
+{
+    listereservations.teteliste=NULL;
+    listereservations.nombreReservations=0;
+    ajouterReservationsstockées(&listereservations);
+    Ajoutnouvellereservation(&listereservations);
+    break;
+}
+case 5:
+{
+    printf(" Veuillez saisir ID de la reservation:    ");
+    scanf("%d",&idreservation);
+    afficherdetailsreservation(idreservation);
+    break;
+}
+case 6:
+{
+    printf("    Veuillez saisir ID du voyageur pour afficher ses reservations");
+    scanf("%d",&idvoyageur);
+    afficherReservationsVoyageur(idvoyageur);
+    break;
+} 
+case 7:
+{
+    printf("    Veuillez saisr ID de la reservation à modifier");
+    scanf("%d",&idreservation);
+    modifierDetailsReservation(idreservation);
+    break;
+}
+case 8 :
+{
+    printf("Merci pour avoir visiter notre application!\n");
+    break;
+}
+default:
+{
+    printf(" votre choix est invalide. Veuillez choisir le numero correspondant à votre besoin\n");
+    break;
+}
+}
+} while (choix !=8);
+libererListeVoyageurs(&listevoyageurs);
+libererListeReservations(&listereservations);
+}
+
+
+
+
+
+
+                                
